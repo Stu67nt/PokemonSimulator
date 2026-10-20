@@ -6,7 +6,6 @@ import random
 
 class BattleAgent(Player):
 	def choose_move(self, battle):
-
 		user_pokemon_id = battle.active_pokemon.identifier(battle.player_role)
 		opponent_pokemon_id = battle.opponent_active_pokemon.identifier(battle.opponent_role)
 		gen = GenData.from_gen(9)
@@ -26,16 +25,21 @@ class BattleAgent(Player):
 			'spd': opponent_stats[4],
 			'spe': opponent_stats[5]
 		}
+
 		max_dmg = 0
 		selected_move = None
 		if battle.available_moves:
+			if len(battle.available_moves) == 1:
+				return self.create_order(battle.available_moves[0])
 			for battle_move in battle.available_moves:
 				tested_dmg = calc_gen9.calculate_damage(user_pokemon_id, opponent_pokemon_id, battle_move, battle)[0]
 				if tested_dmg > max_dmg:
 					max_dmg = tested_dmg
 					selected_move = battle_move
-			return self.create_order(selected_move)
+			if selected_move == None:
+				return self.create_order(random.choice(battle.available_moves))
+			else:
+				return self.create_order(selected_move)
 		elif battle.available_switches:
 			return self.create_order(random.choice(battle.available_switches))
-		else:
-			return self.choose_random_move(battle)
+		return self.choose_random_move(battle)
