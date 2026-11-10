@@ -4,17 +4,24 @@ from poke_env.calc import damage_calc_gen9 as calc_gen9
 from poke_env.stats import compute_raw_stats
 from poke_env.battle import pokemon_type
 import random
+import json
 
 class BattleAgent(Player):
 
 	def __init__(self):
-		super().__init__()
+		super().__init__(max_concurrent_battles=2)
 		self.opponent_team = {}
 
 	def choose_move(self, battle):
+		if battle.battle_tag not in self.opponent_team:
+			self.opponent_team[battle.battle_tag] = {}
+
+		# Getting ids
 		user_pokemon_id = battle.active_pokemon.identifier(battle.player_role)
 		opponent_pokemon_id = battle.opponent_active_pokemon.identifier(battle.opponent_role)
 
+
+		self.add_opponent_pokemon(battle)
 		opponent_pokemon_out = self.calc_opponent_stats(battle)
 
 		max_dmg = 0
@@ -56,4 +63,11 @@ class BattleAgent(Player):
 		}
 		return opponent_pokemon_out
 
-	def switch_logic(self, battle):
+	def add_opponent_pokemon(self, battle):
+		battle_tag = battle.battle_tag
+		opposing_pokemon_out = battle.opponent_active_pokemon
+		opponent_name = opposing_pokemon_out.base_species
+		with open("data/sets.json", "r") as f:
+			all_sets = json.load(f)
+			if opponent_name not in self.opponent_team:
+				self.opponent_team[battle_tag][opponent_name] = all_sets[opponent_name]
