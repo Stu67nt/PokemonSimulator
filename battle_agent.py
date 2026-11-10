@@ -6,6 +6,11 @@ from poke_env.battle import pokemon_type
 import random
 import json
 
+
+"""
+This bot is a very limited and rudementry bot which odes not try predict any switches
+It is optimised for gen 9 randoms.
+"""
 class BattleAgent(Player):
 
 	def __init__(self):
@@ -20,28 +25,50 @@ class BattleAgent(Player):
 		user_pokemon_id = battle.active_pokemon.identifier(battle.player_role)
 		opponent_pokemon_id = battle.opponent_active_pokemon.identifier(battle.opponent_role)
 
-
 		self.add_opponent_pokemon(battle)
-		opponent_pokemon_out = self.calc_opponent_stats(battle)
+		# Not currently in use
+		# opponent_pokemon_out = self.calc_opponent_stats(battle)
 
+
+		if battle.available_moves:
+			selected_attack = self.best_attack(battle)
+		elif battle.available_switches:
+			selected_switch = self.best_switch(battle)
+		return self.choose_random_move(battle)
+
+	def best_attack(self, battle):
+		# Initalising vars
 		max_dmg = 0
 		selected_move = None
+		user_pokemon_id = battle.active_pokemon.identifier(battle.player_role)
+		opponent_pokemon_id = battle.opponent_active_pokemon.identifier(battle.opponent_role)
+
+		# Checking if we have any avaliable moves
 		if battle.available_moves:
+			# Only 1 avaliable option lmao
 			if len(battle.available_moves) == 1:
-				return self.create_order(battle.available_moves[0])
+				return battle.available_moves[0]
+
+			# Calcing dmg for each avaliable move
 			for battle_move in battle.available_moves:
 				# Assuming low roll
 				tested_dmg = calc_gen9.calculate_damage(user_pokemon_id, opponent_pokemon_id, battle_move, battle)[0]
 				if tested_dmg > max_dmg:
 					max_dmg = tested_dmg
 					selected_move = battle_move
+
 			if selected_move == None:
-				return self.create_order(random.choice(battle.available_moves))
+				# No valid move found
+				# Should not trigger unless I am a dofus
+				return random.choice(battle.available_moves)
 			else:
-				return self.create_order(selected_move)
-		elif battle.available_switches:
-			return self.create_order(random.choice(battle.available_switches))
-		return self.choose_random_move(battle)
+				return selected_move
+
+	def best_switch(self, battle):
+		opponent_name = battle.opponent_active_pokemon.base_species
+
+		# Defaults to a random choice
+		return random.choice(battle.available_switches)
 
 	def calc_opponent_stats(self, battle):
 		gen = GenData.from_gen(9)
